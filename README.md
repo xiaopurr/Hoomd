@@ -1,2 +1,2 @@
 # Hoomd
-My hoomd simulation code
+My hoomd simulation code files.
