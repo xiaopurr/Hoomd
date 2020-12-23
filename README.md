@@ -1,4 +1,4 @@
 # Hoomd
-My hoomd simulation code that I created through my learning process
+A selection of my **finest** hoomd simulation code that I created through my learning process
 
-# The King is dead, long live the king!
+Also, will probably maintain this repository regularly and update with my latest code
