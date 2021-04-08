@@ -6,8 +6,8 @@ Created on Mon Apr  5 19:34:37 2021
 @author: moyuan
 
 this script attempts to creating a modular hoomd simulator with a 
-functional programming approach, such that this script can be easily adopted
-to simulate any porous system.
+functional and object oriented programming approach, such that this 
+script can be easily adopted to simulate any porous system.
 """
 import hoomd
 import numpy as np
