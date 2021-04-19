@@ -6,8 +6,8 @@ Created on Mon Apr  5 19:34:37 2021
 @author: moyuan
 
 this script attempts to creating a modular hoomd simulator with a 
-functional and object oriented programming approach, such that this 
-script can be easily adopted to simulate any porous system.
+functional programming approach, such that this script can be easily adopted
+to simulate any porous system.
 """
 import hoomd
 import numpy as np
@@ -77,7 +77,7 @@ def lat2snap(pl,pas_rad,act_lat):
     box = hoomd.data.boxdim(Lx=pl.Lx,Ly=pl.Ly,dimensions=2)
     
     """make the hoomd snapshot"""
-    p_types = list(pas_types)
+    p_types = list([str(i) for i in pid])
     p_types.append('active')
     snap = hoomd.data.make_snapshot(N = Np+Na, box=box, particle_types=p_types)
     active_id = len(p_types)-1
@@ -94,8 +94,9 @@ def lat2snap(pl,pas_rad,act_lat):
     snap.particles.typeid[Np:]=active_id
     
     """reverse map the typeid and the radius for setting interaction potential"""
-    rad_dict = {r: float(i) for i, r in p_dict.items()}
     
+    rad_dict = {r: round(float(i),5) for i, r in p_dict.items()}
+    rad_dict['active']=0.5
     return snap, rad_dict
 
 #%%
@@ -162,13 +163,27 @@ class sq_lattice:
             The lattice positions in a list of ordered pairs [[x00, y00]...[xij,yij]].
 
         """
-        return [[self.ax*i, self.ay*j] for i in range(self.Nx) for j in range(self.Ny)]
+        return [[self.ax*i-self.Lx/2, self.ay*j-self.Ly/2] for i in range(self.Nx) for j in range(self.Ny)]
     
     def getx(self):
         return [i[0] for i in self.tolist()]
         
     def gety(self):
         return [i[1] for i in self.tolist()]
+    
+    def generateR(self,r_type='updown',packing_fraction=0):
+        radius=[]
+        if r_type == 'updown':
+            radius1 = [i/int(self.Nx*(2**(1/6))) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            radius2 = list(radius1)
+            radius2.reverse()
+            radius=list(np.concatenate((radius1,radius2)))
+        if r_type == 'uniform':
+            pillar_area = packing_fraction*self.ax*self.ay
+            radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]
+        return radius
+    
+    
 class hex_lattice:
     """
     
@@ -211,14 +226,28 @@ class hex_lattice:
 
         """
         ay = self.a*np.sqrt(3)
-        return np.concatenate(([[self.a*i,ay*j] for i in range(self.Nx) for j in range(self.Ny)],
-                               [[self.a*(i+1/2), ay*(j+1/2)] for i in range(self.Nx) for j in range(self.Ny)])).tolist()
+        return np.concatenate(([[self.a*i-self.Lx/2,ay*j-self.Ly/2] for i in range(self.Nx) for j in range(self.Ny)],
+                               [[self.a*(i+1/2)-self.Lx/2, ay*(j+1/2)-self.Ly/2] for i in range(self.Nx) for j in range(self.Ny)])).tolist()
 
     def getx(self):
         return [i[0] for i in self.tolist()]
         
     def gety(self):
         return [i[1] for i in self.tolist()]
+    def generateR(self,r_type='updown',packing_fraction=0):
+        radius=[]
+        if r_type == 'updown':
+            radius1 = [i/(int(self.Nx)*(2**(1/6))) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            radius2 = list(radius1)
+            radius2.reverse()
+            radius=list(np.concatenate((radius1,radius2)))
+            radius = list(np.concatenate((radius,radius)))
+        if r_type == 'uniform':
+            # pillar_area = packing_fraction*(self.a**2)*np.sqrt(3) changed 04142021 by mike
+            pillar_area = packing_fraction*(self.a**2)*np.sqrt(3)/2
+            radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]*2
+        return radius
+
 #%%
 def add_active(pl,Na):
     offset = 1/2
@@ -231,12 +260,12 @@ def add_active(pl,Na):
     if pl.lattice_type == 'sq':
         slots = range(pl.N)
         insert = np.random.choice(slots,Na)
-        act = [[(i%pl.Nx+offset)*pl.ax, ((np.floor(i/pl.Nx)+offset)*pl.ay)] for i in insert]
+        act = [[(i%pl.Nx+offset)*pl.ax-pl.Lx/2, ((np.floor(i/pl.Nx)+offset)*pl.ay)-pl.Ly/2] for i in insert]
         
     elif pl.lattice_type == 'hex':
         slots = range(int(pl.N/2))
         insert = np.random.choice(slots,Na)
-        act = [[(i%pl.Nx)*pl.a, (np.floor(i/pl.Nx)+offset)*pl.a*np.sqrt(3)] for i in insert]
+        act = [[(i%pl.Nx)*pl.a-pl.Lx/2, (np.floor(i/pl.Nx)+offset)*pl.a*np.sqrt(3)-pl.Ly/2] for i in insert]
     else:
         print('lattice type unknown')
         return 'praise the sun!'
