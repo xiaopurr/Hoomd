@@ -141,8 +141,14 @@ class sq_lattice:
     Nx=None;Ny=None;N=None
     ax=None;ay=None;
     Lx=None;Ly=None;
+    N_cell_x =None;
+    N_cell_y=None;
+    
+    max_rho = 0.22
+    
     lattice_type = 'sq'
-    def __init__(self, Nx, Ny, ax, ay):
+    radius=[]
+    def __init__(self, Nx, Ny, ax, ay,radius=[], N_cell_x=10,N_cell_y=10):
 
         self.Nx=Nx
         self.Ny=Ny
@@ -153,6 +159,10 @@ class sq_lattice:
         self.Ly = Ny*ay
         self.N = int(Nx*Ny)
         
+        self.radius=radius
+        self.N_cell_x = N_cell_x
+        self.N_cell_y=N_cell_y
+        self.w=0.25
     def tolist(self):
         """
         
@@ -171,18 +181,49 @@ class sq_lattice:
     def gety(self):
         return [i[1] for i in self.tolist()]
     
-    def generateR(self,r_type='updown',packing_fraction=0):
+    def generateR(self,r_type='updown',packing_fraction=0,func=None):
+        Nx=self.Nx
+        Ny=self.Ny
         radius=[]
         if r_type == 'updown':
-            radius1 = [i/int(self.Nx*(2**(1/6))) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            radius1 = [i/int(self.Nx) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            radius2 = list(radius1)
+            radius2.reverse()
+            radius=list(np.concatenate((radius1,radius2)))
+        if r_type == 'updown_var':
+            radius1 = [i/int(self.Nx) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
             radius2 = list(radius1)
             radius2.reverse()
             radius=list(np.concatenate((radius1,radius2)))
         if r_type == 'uniform':
             pillar_area = packing_fraction*self.ax*self.ay
             radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]
+        if r_type == 'random':
+            Nx_sub = int(self.Nx/self.N_cell_x)
+            Ny_sub = int(self.Ny/self.N_cell_y)
+            r_cell = np.random.rand(self.N_cell_x,self.N_cell_y)/2
+            radius = [r_cell[xcn][ycn] for xcn in range(self.N_cell_x) for xnc in range(Nx_sub) for ycn in range(self.N_cell_y) for ync in range(Ny_sub)]
+        if r_type == 'r':
+            radius=[(np.sqrt((i-Nx/2)**2+(j-Ny/2)**2))/(2*np.sqrt((Nx/2)**2+(Ny/2)**2)) for i in range(Nx) for j in range(Ny)]
+        if r_type =='sin_1d':
+            w = self.w
+            radius=[abs(np.sin(w*(i-Nx/2)))/2 for i in range(Nx) for j in range(Ny)]
+        if r_type == 'sin_2d':
+            w=self.w
+            radius=[abs(np.sin(w*np.sqrt((i-Nx/2)**2+(j-Ny/2)**2)))/2 for i in range(Nx) for j in range(Ny)] 
+        if r_type =='1/r':
+            radius=[3/(np.sqrt((i-Nx/2)**2+(j-Ny/2)**2+6**2)) for i in range(Nx) for j in range(Ny)] 
+        self.radius=radius
         return radius
-    
+    # def randomizeR(self):
+    #     slices = [self.radius[x:x+self.Ny] for x in range(0, len(self.radius), self.Ny)]
+    #     A = self.ax*self.ay*self.Ny
+    #     randomized_radius=[]
+    #     for s in slices:
+    #         rand_s=np.zeros(Ny)
+    #         sf = sum([np.pi*(i**2) for i in s])/A
+    #         for i in range(Ny):
+    #             rand_s[i]=0
     
 class hex_lattice:
     """
@@ -247,6 +288,7 @@ class hex_lattice:
             pillar_area = packing_fraction*(self.a**2)*np.sqrt(3)/2
             radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]*2
         return radius
+
 
 #%%
 def add_active(pl,Na):
