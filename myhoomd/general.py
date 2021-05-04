@@ -10,8 +10,13 @@ import numpy as np
 
 import hoomd
 from hoomd import md
+def savedata(l,name):
+    import pandas as pd
+    df = pd.DataFrame(l)
+    df.to_csv(name)
 
-def make_mov(data_name,filename,fps=25):
+
+def make_mov(data_name,filename,skip=25):
 
     from bokeh.plotting import figure
     from bokeh.io import export_png
@@ -27,7 +32,7 @@ def make_mov(data_name,filename,fps=25):
         if r != 'active':
             rad_list.append([i for i,x in enumerate(frame0.particles.typeid) if x == r])
     x_lim = frame0.configuration.box[0]
-    for frame in data[::int(1e3/fps)]:
+    for frame in data[::skip]:
         f = figure(x_range=[-x_lim/2,x_lim/2], y_range=[-x_lim/2,x_lim/2],match_aspect=True)
         key=0
         for r in rad_list:
@@ -42,7 +47,7 @@ def simulate(snap, r_dict, save_file, va=4, t=5, dt=0.1, fps=25,null_lattice=Fal
     
     seed=np.random.randint(0,9999)
     kT=1
-    v0=va*(1/(1.1/(0.669e-3))) #4 micron / second
+    v0=va*(1/(1/(0.669e-3))) #4 micron / second
     gamma=4130
     fr=gamma*(4/3)*(1/4)
 
@@ -71,7 +76,8 @@ def simulate(snap, r_dict, save_file, va=4, t=5, dt=0.1, fps=25,null_lattice=Fal
     for i in sys.particles.types:
         if i != 'active':
             s = r_dict[int(i)]+r_dict['active']
-            wca.pair_coeff.set(i, 'active', epsilon=epsilon, sigma=s,r_cut=s*(2**(1/6)))
+            # wca.pair_coeff.set(i, 'active', epsilon=epsilon, sigma=s,r_cut=s*(2**(1/6)))
+            wca.pair_coeff.set(i, 'active', epsilon=epsilon, sigma=s,r_cut=s)
             for j in sys.particles.types:
                 if j != 'active':
                     wca.pair_coeff.set(i,j, epsilon=0, sigma=0)
