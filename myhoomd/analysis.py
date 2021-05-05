@@ -60,13 +60,24 @@ def randR2rho(rlist, x, y, Nx=30, Ny=30, ax=2,ay=2):
     xn = int(x/ax)
     yn = int(y/ay)
     
-    rlist = [rlist[x:x+Ny] for x in range(0,len(rlist),Nx)]
+    rlist = [rlist[x:x+Ny] for x in range(0,len(rlist),Ny)]
     
     r = rlist[xn][yn]
     rho = np.pi*(r**2)/(ax*ay)
     return rho
 
+def xy2rho(rlist, x, y, Nx, Ny, ax=2,ay=2):
+    x = x+(Nx*ax/2)
+    y = y+(Ny*ay/2)
+    
+    xn = int(x/ax)
+    yn = int(y/ay)
+    
+    rlist = [rlist[x:x+Ny] for x in range(0,len(rlist),Ny)]
 
+    r = rlist[xn][yn]
+    rho = np.pi*(r**2)/(ax*ay)
+    return rho
 def veff_raw(file, fps=25):
     data, rd = load_data(file)
     
