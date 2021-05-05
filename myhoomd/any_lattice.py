@@ -191,10 +191,18 @@ class sq_lattice:
             radius2.reverse()
             radius=list(np.concatenate((radius1,radius2)))
         if r_type == 'updown_var':
-            radius1 = [i/int(self.Nx) for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            r_max = np.sqrt((packing_fraction*self.ax*self.ay)/np.pi)
+            radius1 = [(i/int(self.Nx))*2*r_max for i in range(int(self.Nx/2)) for j in range(self.Ny)]
             radius2 = list(radius1)
             radius2.reverse()
             radius=list(np.concatenate((radius1,radius2)))
+        if r_type =='updown_var_rho':
+            rho_max = packing_fraction
+            rho1 = [(i/int(self.Nx))*2*rho_max for i in range((int(self.Nx/2))) for j in range(self.Ny)]
+            rho2 = list(rho1)
+            rho2.reverse()
+            rho = list(np.concatenate((rho1,rho2)))
+            radius = [np.sqrt(i*self.ax*self.ay/np.pi) for i in rho]
         if r_type == 'uniform':
             pillar_area = packing_fraction*self.ax*self.ay
             radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]
@@ -247,6 +255,7 @@ class hex_lattice:
     a=None;
     Lx=None;Ly=None;
     lattice_type='hex'
+    radius=None
     def __init__(self,Nx,Ny,a):
 
         self.Nx=Nx
@@ -283,10 +292,26 @@ class hex_lattice:
             radius2.reverse()
             radius=list(np.concatenate((radius1,radius2)))
             radius = list(np.concatenate((radius,radius)))
+        if r_type == 'updown_var':
+            r_max = np.sqrt((packing_fraction*(self.a**2)*np.sqrt(3))/(2*np.pi))
+            radius1 = [(i/int(self.Nx))*2*r_max for i in range(int(self.Nx/2)) for j in range(self.Ny)]
+            radius2 = list(radius1)
+            radius2.reverse()
+            radius=list(np.concatenate((radius1,radius2)))
+            radius=list(np.concatenate((radius,radius)))
+        if r_type =='updown_var_rho':
+            rho_max = packing_fraction
+            rho1 = [(i/int(self.Nx))*2*rho_max for i in range((int(self.Nx/2))) for j in range(self.Ny)]
+            rho2 = list(rho1)
+            rho2.reverse()
+            rho = list(np.concatenate((rho1,rho2)))
+            radius = [np.sqrt(i*(self.a**2)*np.sqrt(3)/(2*np.pi)) for i in rho]
+            radius = list(np.concatenate((radius,radius)))
         if r_type == 'uniform':
             # pillar_area = packing_fraction*(self.a**2)*np.sqrt(3) changed 04142021 by mike
             pillar_area = packing_fraction*(self.a**2)*np.sqrt(3)/2
             radius = [np.sqrt(pillar_area/np.pi) for i in range(self.Nx) for j in range(self.Ny)]*2
+        self.radius=radius
         return radius
 
 
